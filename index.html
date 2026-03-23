@@ -6,489 +6,209 @@
 <title>外商案件管理 - 良平堂</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root {
-  --bg-primary: #f7f5f0;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #edeae3;
+  --bg-primary: #f5f3ee;
+  --bg-card: #ffffff;
+  --bg-hover: #faf8f4;
+  --bg-input: #fafaf7;
+  --bg-header: #3d2e1e;
   --text-primary: #2c2420;
   --text-secondary: #6b5e54;
   --text-muted: #9a8d82;
+  --text-on-dark: #f0ebe3;
   --border: #ddd5ca;
   --border-light: #ece7df;
   --accent: #8b5a3c;
-  --accent-light: #a67c5b;
-  --accent-bg: #f0e8df;
-  --shadow-sm: 0 1px 3px rgba(44,36,32,0.06);
-  --shadow-md: 0 4px 12px rgba(44,36,32,0.08);
-  --shadow-lg: 0 8px 30px rgba(44,36,32,0.12);
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  /* stage colors */
-  --stage-inquiry: #e8d5b7;
-  --stage-inquiry-text: #7a5c2e;
-  --stage-estimate: #d4e2f0;
-  --stage-estimate-text: #2e5a7a;
-  --stage-order: #d4ecd8;
-  --stage-order-text: #2e6b3a;
-  --stage-production: #f0dcd4;
-  --stage-production-text: #7a3e2e;
-  --stage-delivery: #d8d4f0;
-  --stage-delivery-text: #3e2e7a;
-  --stage-complete: #cce8cc;
-  --stage-complete-text: #1e5a1e;
-  --stage-cancel: #e8cccc;
-  --stage-cancel-text: #7a2e2e;
+  --accent-hover: #a67c5b;
+  --accent-bg: #f3ebe0;
+  --shadow-xs: 0 1px 2px rgba(44,36,32,0.04);
+  --shadow-sm: 0 1px 4px rgba(44,36,32,0.07);
+  --shadow-md: 0 4px 16px rgba(44,36,32,0.08);
+  --shadow-lg: 0 8px 32px rgba(44,36,32,0.12);
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+  --stage-inquiry: #e8d5b7; --stage-inquiry-t: #7a5c2e;
+  --stage-estimate: #d4e2f0; --stage-estimate-t: #2e5a7a;
+  --stage-order: #d4ecd8; --stage-order-t: #2e6b3a;
+  --stage-production: #f0dcd4; --stage-production-t: #7a3e2e;
+  --stage-delivery: #d8d4f0; --stage-delivery-t: #3e2e7a;
+  --stage-complete: #cce8cc; --stage-complete-t: #1e5a1e;
+  --stage-cancel: #e8cccc; --stage-cancel-t: #7a2e2e;
 }
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans JP','Zen Kaku Gothic New',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.65}
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+.app-header{background:var(--bg-header);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.app-header h1{font-size:16px;font-weight:600;letter-spacing:.08em;color:var(--text-on-dark)}
+.app-header h1 span{font-weight:300;opacity:.6;margin-left:10px;font-size:12px;letter-spacing:.12em}
+.header-actions{display:flex;gap:8px;align-items:center}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#6fcf6f;margin-right:8px;box-shadow:0 0 6px rgba(111,207,111,.5);animation:pulse 2s infinite}
+.sync-dot.offline{background:#cf6f6f;box-shadow:0 0 6px rgba(207,111,111,.5)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-body {
-  font-family: 'Noto Sans JP', 'Zen Kaku Gothic New', sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  line-height: 1.6;
-}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid rgba(255,255,255,.15);border-radius:var(--radius-sm);background:rgba(255,255,255,.08);color:var(--text-on-dark);font-size:12px;font-family:inherit;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.15)}
+.btn-surface{background:var(--bg-card);color:var(--text-primary);border-color:var(--border)}
+.btn-surface:hover{background:var(--bg-hover);border-color:var(--accent)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-danger{color:#c0453e;border-color:#e4c4c2;background:var(--bg-card)}
+.btn-danger:hover{background:#fdf2f1}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-icon{width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm)}
 
-/* Header */
-.app-header {
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow-sm);
-}
-.app-header h1 {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  color: var(--accent);
-}
-.app-header h1 span {
-  font-weight: 300;
-  color: var(--text-secondary);
-  margin-left: 8px;
-  font-size: 13px;
-}
-.header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+.main-container{max-width:1480px;margin:0 auto;padding:20px 28px}
 
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-.btn:hover { background: var(--bg-tertiary); border-color: var(--accent-light); }
-.btn-primary {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-.btn-primary:hover { background: var(--accent-light); }
-.btn-danger { color: #b94a48; border-color: #e8cccc; }
-.btn-danger:hover { background: #fdf0f0; }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
-.btn-icon {
-  width: 34px; height: 34px; padding: 0;
-  display: flex; align-items: center; justify-content: center;
-}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:16px 20px;box-shadow:var(--shadow-xs);transition:box-shadow .2s}
+.stat-card:hover{box-shadow:var(--shadow-sm)}
+.stat-label{font-size:11px;color:var(--text-muted);font-weight:500;letter-spacing:.06em}
+.stat-value{font-size:24px;font-weight:700;color:var(--text-primary);margin-top:2px;font-variant-numeric:tabular-nums}
+.stat-value.warn{color:#c0453e}
 
-/* Layout */
-.main-container {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 20px 24px;
-}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.search-box{position:relative;flex:1;min-width:200px;max-width:380px}
+.search-box input{width:100%;padding:9px 12px 9px 38px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg-card);color:var(--text-primary);transition:border-color .15s,box-shadow .15s}
+.search-box input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,90,60,.08)}
+.search-box input::placeholder{color:var(--text-muted)}
+.search-box svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
+.filter-group{display:flex;gap:5px;flex-wrap:wrap}
+.filter-chip{padding:5px 13px;border:1px solid var(--border);border-radius:20px;background:var(--bg-card);font-size:11px;cursor:pointer;transition:all .15s;font-family:inherit;color:var(--text-secondary)}
+.filter-chip:hover{border-color:var(--accent);color:var(--accent)}
+.filter-chip.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:600}
+.toolbar-right{margin-left:auto;display:flex;gap:6px;align-items:center}
 
-/* Stats bar */
-.stats-bar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.stat-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: 14px 20px;
-  min-width: 140px;
-  flex: 1;
-  box-shadow: var(--shadow-sm);
-}
-.stat-card .stat-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 500;
-  letter-spacing: 0.05em;
-}
-.stat-card .stat-value {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-top: 2px;
-}
-.stat-card .stat-sub {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
+.table-wrapper{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);overflow:hidden}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:1120px}
+thead{background:var(--bg-primary);position:sticky;top:0;z-index:10}
+thead th{padding:11px 14px;text-align:left;font-weight:600;font-size:10.5px;letter-spacing:.08em;color:var(--text-muted);border-bottom:2px solid var(--border);white-space:nowrap;text-transform:uppercase}
+tbody tr{border-bottom:1px solid var(--border-light);transition:background .1s;cursor:pointer}
+tbody tr:hover{background:var(--bg-hover)}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:10px 14px;vertical-align:middle}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.id-cell{font-weight:600;font-size:12px;color:var(--accent);letter-spacing:.03em}
 
-/* Toolbar */
-.toolbar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-.search-box {
-  position: relative;
-  flex: 1;
-  min-width: 200px;
-  max-width: 360px;
-}
-.search-box input {
-  width: 100%;
-  padding: 9px 12px 9px 36px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-family: inherit;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  transition: border-color 0.15s;
-}
-.search-box input:focus { outline: none; border-color: var(--accent); }
-.search-box svg {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-}
-.filter-group {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.filter-chip {
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  background: var(--bg-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: inherit;
-  color: var(--text-secondary);
-}
-.filter-chip:hover { border-color: var(--accent-light); }
-.filter-chip.active {
-  background: var(--accent-bg);
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 500;
-}
+.stage-badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.stg-inquiry{background:var(--stage-inquiry);color:var(--stage-inquiry-t)}
+.stg-estimate{background:var(--stage-estimate);color:var(--stage-estimate-t)}
+.stg-order{background:var(--stage-order);color:var(--stage-order-t)}
+.stg-production{background:var(--stage-production);color:var(--stage-production-t)}
+.stg-delivery{background:var(--stage-delivery);color:var(--stage-delivery-t)}
+.stg-complete{background:var(--stage-complete);color:var(--stage-complete-t)}
+.stg-cancel{background:var(--stage-cancel);color:var(--stage-cancel-t)}
 
-/* Table */
-.table-wrapper {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
-}
-.table-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  min-width: 1100px;
-}
-thead {
-  background: var(--bg-tertiary);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-thead th {
-  padding: 10px 14px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
-  border-bottom: 2px solid var(--border);
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.15s;
-}
-thead th:hover { color: var(--accent); }
-thead th.sort-active { color: var(--accent); }
-thead th .sort-arrow { margin-left: 4px; font-size: 10px; }
-tbody tr {
-  border-bottom: 1px solid var(--border-light);
-  transition: background 0.1s;
-}
-tbody tr:hover { background: #faf8f5; }
-tbody td {
-  padding: 10px 14px;
-  vertical-align: middle;
-}
-tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pri-high{color:#c0453e;font-weight:600}.pri-mid{color:#b08a2e;font-weight:500}.pri-low{color:var(--text-muted)}
+.dl-overdue{color:#c0453e;font-weight:600}.dl-near{color:#b08a2e;font-weight:500}.dl-ok{color:var(--text-secondary)}
 
-/* Stage badge */
-.stage-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.stage-inquiry    { background: var(--stage-inquiry);    color: var(--stage-inquiry-text); }
-.stage-estimate   { background: var(--stage-estimate);   color: var(--stage-estimate-text); }
-.stage-order      { background: var(--stage-order);      color: var(--stage-order-text); }
-.stage-production { background: var(--stage-production); color: var(--stage-production-text); }
-.stage-delivery   { background: var(--stage-delivery);   color: var(--stage-delivery-text); }
-.stage-complete   { background: var(--stage-complete);   color: var(--stage-complete-text); }
-.stage-cancel     { background: var(--stage-cancel);     color: var(--stage-cancel-text); }
+.row-actions{display:flex;gap:3px;opacity:0;transition:opacity .12s}
+tbody tr:hover .row-actions{opacity:1}
+.row-actions .btn-icon{background:transparent;border:1px solid transparent;color:var(--text-muted)}
+.row-actions .btn-icon:hover{background:var(--bg-primary);border-color:var(--border);color:var(--text-primary)}
+.row-actions .btn-icon.del:hover{color:#c0453e;border-color:#e4c4c2}
 
-/* Priority */
-.priority-high { color: #b94a48; font-weight: 600; }
-.priority-mid  { color: #b88a2e; font-weight: 500; }
-.priority-low  { color: var(--text-muted); }
+.modal-overlay{position:fixed;inset:0;background:rgba(44,36,32,.45);backdrop-filter:blur(2px);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:100%;max-width:700px;transform:translateY(16px) scale(.98);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.modal-overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border-light)}
+.modal-header h2{font-size:15px;font-weight:600}
+.modal-body{padding:24px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 24px;border-top:1px solid var(--border-light);background:var(--bg-primary);border-radius:0 0 var(--radius-lg) var(--radius-lg)}
 
-/* Deadline warning */
-.deadline-warn { color: #b94a48; font-weight: 500; }
-.deadline-near { color: #b88a2e; }
-.deadline-ok   { color: var(--text-secondary); }
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:11px;font-weight:600;color:var(--text-secondary);letter-spacing:.04em}
+.form-group input,.form-group select,.form-group textarea{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg-input);color:var(--text-primary);transition:border-color .15s,box-shadow .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,90,60,.08)}
+.form-group textarea{resize:vertical;min-height:56px}
 
-/* Row actions */
-.row-actions {
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-tbody tr:hover .row-actions { opacity: 1; }
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state p{font-size:13px;margin-top:8px}
 
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(44,36,32,0.4);
-  z-index: 200;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 40px 16px;
-  overflow-y: auto;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-.modal-overlay.open { opacity: 1; pointer-events: auto; }
-.modal {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  width: 100%;
-  max-width: 680px;
-  transform: translateY(20px);
-  transition: transform 0.2s;
-}
-.modal-overlay.open .modal { transform: translateY(0); }
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border-light);
-}
-.modal-header h2 {
-  font-size: 16px;
-  font-weight: 600;
-}
-.modal-body { padding: 24px; }
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 24px;
-  border-top: 1px solid var(--border-light);
-}
+.loading-bar{position:fixed;top:56px;left:0;right:0;height:3px;background:var(--accent);z-index:150;animation:loadSlide 1.2s ease infinite;display:none}
+.loading-bar.show{display:block}
+@keyframes loadSlide{0%{transform:translateX(-100%)}50%{transform:translateX(0)}100%{transform:translateX(100%)}}
 
-/* Form */
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.form-group { display: flex; flex-direction: column; gap: 4px; }
-.form-group.full { grid-column: 1 / -1; }
-.form-group label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-family: inherit;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  transition: border-color 0.15s;
-}
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.form-group textarea { resize: vertical; min-height: 60px; }
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg-header);color:var(--text-on-dark);padding:11px 20px;border-radius:var(--radius-sm);font-size:13px;box-shadow:var(--shadow-lg);animation:toastIn .25s ease,toastOut .25s ease 2.6s forwards}
+@keyframes toastIn{from{transform:translateY(12px);opacity:0}}
+@keyframes toastOut{to{transform:translateY(12px);opacity:0}}
 
-/* Empty state */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-muted);
-}
-.empty-state svg { margin-bottom: 12px; }
-.empty-state p { font-size: 14px; }
+.confirm-overlay{position:fixed;inset:0;background:rgba(44,36,32,.5);backdrop-filter:blur(2px);z-index:250;display:flex;align-items:center;justify-content:center}
+.confirm-box{background:var(--bg-card);border-radius:var(--radius-md);padding:28px;max-width:400px;box-shadow:var(--shadow-lg)}
+.confirm-box p{margin-bottom:20px;font-size:14px;line-height:1.7}
+.confirm-actions{display:flex;gap:8px;justify-content:flex-end}
 
-/* Toast */
-.toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 300;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.toast {
-  background: var(--text-primary);
-  color: #fff;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  box-shadow: var(--shadow-lg);
-  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
-}
-@keyframes toastIn { from { transform: translateY(16px); opacity: 0; } }
-@keyframes toastOut { to { transform: translateY(16px); opacity: 0; } }
+.setup-screen{max-width:560px;margin:80px auto;padding:40px;background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-md)}
+.setup-screen h2{font-size:18px;margin-bottom:8px;color:var(--accent)}
+.setup-screen p{font-size:13px;color:var(--text-secondary);margin-bottom:24px;line-height:1.8}
+.setup-screen .form-group{margin-bottom:16px}
+.setup-screen .form-group label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block}
+.setup-screen .form-group input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg-input)}
+.setup-screen .form-group input:focus{outline:none;border-color:var(--accent)}
 
-/* Confirm dialog */
-.confirm-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(44,36,32,0.5);
-  z-index: 250;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+@media(max-width:768px){
+  .app-header{padding:0 14px}.app-header h1 span{display:none}.main-container{padding:14px}
+  .stats-bar{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}
+  .toolbar{flex-direction:column;align-items:stretch}.search-box{max-width:100%}.toolbar-right{margin-left:0}
 }
-.confirm-box {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  padding: 24px;
-  max-width: 400px;
-  box-shadow: var(--shadow-lg);
-  text-align: center;
-}
-.confirm-box p { margin-bottom: 18px; font-size: 14px; }
-.confirm-actions { display: flex; gap: 8px; justify-content: center; }
-
-/* Responsive */
-@media (max-width: 768px) {
-  .app-header { padding: 0 14px; }
-  .main-container { padding: 14px; }
-  .stats-bar { gap: 8px; }
-  .stat-card { min-width: 100px; padding: 10px 14px; }
-  .stat-card .stat-value { font-size: 18px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .toolbar { flex-direction: column; align-items: stretch; }
-  .search-box { max-width: 100%; }
-}
-
-/* Print */
-@media print {
-  .app-header, .toolbar, .row-actions, .header-actions { display: none !important; }
-  .table-wrapper { box-shadow: none; border: 1px solid #ccc; }
-  table { min-width: auto; font-size: 11px; }
-}
-
-/* Table checkbox column */
-.col-check { width: 40px; text-align: center; }
-.col-check input { cursor: pointer; }
+@media print{.app-header,.toolbar,.row-actions,.header-actions,.loading-bar{display:none!important}.table-wrapper{box-shadow:none;border:1px solid #ccc}table{min-width:auto;font-size:10px}}
 </style>
 </head>
 <body>
 
+<div class="loading-bar" id="loadingBar"></div>
+
 <header class="app-header">
   <h1>外商案件管理<span>良平堂</span></h1>
   <div class="header-actions">
-    <button class="btn btn-sm" onclick="exportCSV()" title="CSV出力">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <div class="sync-dot" id="syncDot" title="接続状態"></div>
+    <button class="btn btn-sm" onclick="exportCSV()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       CSV出力
     </button>
-    <button class="btn btn-sm" onclick="document.getElementById('csvImport').click()" title="CSV取込">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <button class="btn btn-sm" onclick="document.getElementById('csvImport').click()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       CSV取込
     </button>
     <input type="file" id="csvImport" accept=".csv" style="display:none" onchange="importCSV(event)">
     <button class="btn btn-primary btn-sm" onclick="openModal()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       新規案件
     </button>
   </div>
 </header>
 
-<main class="main-container">
-  <!-- Stats -->
-  <div class="stats-bar" id="statsBar"></div>
+<div class="setup-screen" id="setupScreen" style="display:none;">
+  <h2>初期設定</h2>
+  <p>Supabaseの接続情報を入力してください。<br>プロジェクトの Settings &gt; API から取得できます。<br>入力した情報はこのブラウザにのみ保存されます。</p>
+  <div class="form-group">
+    <label>Supabase Project URL</label>
+    <input type="url" id="setupUrl" placeholder="https://xxxxxxxx.supabase.co">
+  </div>
+  <div class="form-group">
+    <label>Supabase Anon Key</label>
+    <input type="text" id="setupKey" placeholder="eyJ...">
+  </div>
+  <div style="margin-top:24px">
+    <button class="btn btn-primary" style="padding:10px 28px;font-size:14px;" onclick="saveSetup()">接続する</button>
+  </div>
+</div>
 
-  <!-- Toolbar -->
+<main class="main-container" id="mainContent" style="display:none;">
+  <div class="stats-bar" id="statsBar"></div>
   <div class="toolbar">
     <div class="search-box">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="顧客名・案件名・商品名で検索..." oninput="renderTable()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="顧客名・案件名・商品名で検索... (Ctrl+K)" oninput="renderTable()">
     </div>
     <div class="filter-group" id="stageFilters"></div>
-    <div style="margin-left:auto; display:flex; gap:6px;">
-      <select id="sortSelect" class="btn btn-sm" onchange="renderTable()" style="appearance:auto; padding-right:24px;">
+    <div class="toolbar-right">
+      <select id="sortSelect" class="btn-surface btn btn-sm" onchange="renderTable()" style="appearance:auto;padding-right:20px;">
         <option value="updated_desc">更新日 新しい順</option>
         <option value="updated_asc">更新日 古い順</option>
         <option value="deadline_asc">納期 近い順</option>
@@ -497,603 +217,409 @@ tbody tr:hover .row-actions { opacity: 1; }
         <option value="amount_asc">金額 低い順</option>
         <option value="customer_asc">顧客名 昇順</option>
       </select>
-      <button class="btn btn-sm btn-danger" id="bulkDeleteBtn" style="display:none" onclick="bulkDelete()">
-        一括削除
-      </button>
+      <button class="btn btn-danger btn-sm" id="bulkDeleteBtn" style="display:none" onclick="bulkDelete()">一括削除</button>
     </div>
   </div>
-
-  <!-- Table -->
   <div class="table-wrapper">
     <div class="table-scroll">
       <table>
-        <thead>
-          <tr>
-            <th class="col-check"><input type="checkbox" id="checkAll" onchange="toggleAll(this.checked)"></th>
-            <th>案件番号</th>
-            <th>ステージ</th>
-            <th>優先度</th>
-            <th>顧客名</th>
-            <th>案件名</th>
-            <th>商品</th>
-            <th>数量</th>
-            <th>金額(税抜)</th>
-            <th>納期</th>
-            <th>担当</th>
-            <th>更新日</th>
-            <th></th>
-          </tr>
-        </thead>
+        <thead><tr>
+          <th style="width:40px;text-align:center"><input type="checkbox" id="checkAll" onchange="toggleAll(this.checked)"></th>
+          <th>案件番号</th><th>ステージ</th><th>優先度</th><th>顧客名</th><th>案件名</th>
+          <th>商品</th><th>数量</th><th>金額(税抜)</th><th>納期</th><th>担当</th><th>更新日</th><th></th>
+        </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
     <div class="empty-state" id="emptyState" style="display:none;">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-      <p>案件がありません</p>
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".35"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <p>案件データがありません</p>
     </div>
   </div>
 </main>
 
-<!-- Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
       <h2 id="modalTitle">新規案件</h2>
-      <button class="btn btn-icon btn-sm" onclick="closeModal()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="btn-icon btn-surface btn" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
-        <div class="form-group">
-          <label>ステージ</label>
-          <select id="fStage">
-            <option value="問合せ">問合せ</option>
-            <option value="見積">見積</option>
-            <option value="受注">受注</option>
-            <option value="製造">製造</option>
-            <option value="配送">配送</option>
-            <option value="完了">完了</option>
-            <option value="失注">失注</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>優先度</label>
-          <select id="fPriority">
-            <option value="高">高</option>
-            <option value="中" selected>中</option>
-            <option value="低">低</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>顧客名 *</label>
-          <input type="text" id="fCustomer" required placeholder="例: 中津川商工会議所">
-        </div>
-        <div class="form-group">
-          <label>顧客連絡先</label>
-          <input type="text" id="fContact" placeholder="電話番号 / メール">
-        </div>
-        <div class="form-group full">
-          <label>案件名 *</label>
-          <input type="text" id="fTitle" required placeholder="例: 創立50周年記念品 栗きんとん詰合せ">
-        </div>
-        <div class="form-group">
-          <label>商品名</label>
-          <input type="text" id="fProduct" placeholder="例: 栗きんとん 10個入">
-        </div>
-        <div class="form-group">
-          <label>数量</label>
-          <input type="number" id="fQuantity" min="0" placeholder="0">
-        </div>
-        <div class="form-group">
-          <label>単価(税抜)</label>
-          <input type="number" id="fUnitPrice" min="0" placeholder="0">
-        </div>
-        <div class="form-group">
-          <label>金額(税抜)</label>
-          <input type="number" id="fAmount" min="0" placeholder="自動計算 or 手入力">
-        </div>
-        <div class="form-group">
-          <label>納期</label>
-          <input type="date" id="fDeadline">
-        </div>
-        <div class="form-group">
-          <label>担当者</label>
-          <input type="text" id="fAssignee" placeholder="例: 田中">
-        </div>
-        <div class="form-group">
-          <label>のし / 包装</label>
-          <input type="text" id="fWrapping" placeholder="例: 内のし 紅白結切">
-        </div>
-        <div class="form-group">
-          <label>配送方法</label>
-          <select id="fShipping">
-            <option value="">未定</option>
-            <option value="店頭渡し">店頭渡し</option>
-            <option value="配達">配達</option>
-            <option value="宅配便">宅配便</option>
-            <option value="クール便">クール便</option>
-          </select>
-        </div>
-        <div class="form-group full">
-          <label>備考</label>
-          <textarea id="fNotes" rows="3" placeholder="特記事項があれば記入"></textarea>
-        </div>
+        <div class="form-group"><label>ステージ</label><select id="fStage"><option value="問合せ">問合せ</option><option value="見積">見積</option><option value="受注">受注</option><option value="製造">製造</option><option value="配送">配送</option><option value="完了">完了</option><option value="失注">失注</option></select></div>
+        <div class="form-group"><label>優先度</label><select id="fPriority"><option value="高">高</option><option value="中" selected>中</option><option value="低">低</option></select></div>
+        <div class="form-group"><label>顧客名 *</label><input type="text" id="fCustomer" placeholder="例: 中津川商工会議所"></div>
+        <div class="form-group"><label>顧客連絡先</label><input type="text" id="fContact" placeholder="電話番号 / メール"></div>
+        <div class="form-group full"><label>案件名 *</label><input type="text" id="fTitle" placeholder="例: 創立50周年記念品 栗きんとん詰合せ"></div>
+        <div class="form-group"><label>商品名</label><input type="text" id="fProduct" placeholder="例: 栗きんとん 10個入"></div>
+        <div class="form-group"><label>数量</label><input type="number" id="fQuantity" min="0" placeholder="0"></div>
+        <div class="form-group"><label>単価(税抜)</label><input type="number" id="fUnitPrice" min="0" placeholder="0"></div>
+        <div class="form-group"><label>金額(税抜)</label><input type="number" id="fAmount" min="0" placeholder="自動計算 or 手入力"></div>
+        <div class="form-group"><label>納期</label><input type="date" id="fDeadline"></div>
+        <div class="form-group"><label>担当者</label><input type="text" id="fAssignee" placeholder="例: 田中"></div>
+        <div class="form-group"><label>のし / 包装</label><input type="text" id="fWrapping" placeholder="例: 内のし 紅白結切"></div>
+        <div class="form-group"><label>配送方法</label><select id="fShipping"><option value="">未定</option><option value="店頭渡し">店頭渡し</option><option value="配達">配達</option><option value="宅配便">宅配便</option><option value="クール便">クール便</option></select></div>
+        <div class="form-group full"><label>備考</label><textarea id="fNotes" rows="3" placeholder="特記事項があれば記入"></textarea></div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn btn-primary" onclick="saveCase()">保存</button>
+      <button class="btn btn-surface" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveCase()" id="saveBtn">保存</button>
     </div>
   </div>
 </div>
 
-<!-- Toast container -->
 <div class="toast-container" id="toastContainer"></div>
-
-<!-- Confirm dialog container -->
 <div id="confirmContainer"></div>
 
 <script>
-// ============================================================
-// Data layer
-// ============================================================
-const STORAGE_KEY = 'ryoheidou_gaisho_v1';
-const STAGES = ['全て','問合せ','見積','受注','製造','配送','完了','失注'];
-const STAGE_CLASS = {
-  '問合せ': 'stage-inquiry',
-  '見積':   'stage-estimate',
-  '受注':   'stage-order',
-  '製造':   'stage-production',
-  '配送':   'stage-delivery',
-  '完了':   'stage-complete',
-  '失注':   'stage-cancel',
-};
+/* ============================================================
+   Config
+   ============================================================ */
+// -- 直接書き込む場合はここに記入 --
+const HARDCODED_URL = '';
+const HARDCODED_KEY = '';
+// ----------------------------------
 
+const CONFIG_KEY = 'ryoheidou_gaisho_config';
+const TABLE = 'gaisho_cases';
+const STAGES = ['全て','問合せ','見積','受注','製造','配送','完了','失注'];
+const STG_CLS = {'問合せ':'stg-inquiry','見積':'stg-estimate','受注':'stg-order','製造':'stg-production','配送':'stg-delivery','完了':'stg-complete','失注':'stg-cancel'};
+
+let sb = null;
 let cases = [];
 let editingId = null;
 let activeStage = '全て';
 let selectedIds = new Set();
 
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) cases = JSON.parse(raw);
-  } catch(e) { cases = []; }
-  if (!cases.length) cases = generateSampleData();
+/* ============================================================
+   Init
+   ============================================================ */
+(async function(){
+  const cfg = getConfig();
+  if (!cfg) { document.getElementById('setupScreen').style.display='block'; return; }
+  await connect(cfg.url, cfg.key);
+})();
+
+function getConfig(){
+  if(HARDCODED_URL&&HARDCODED_KEY) return {url:HARDCODED_URL,key:HARDCODED_KEY};
+  try{ const r=localStorage.getItem(CONFIG_KEY); return r?JSON.parse(r):null; }catch{return null;}
 }
 
-function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cases));
+function saveSetup(){
+  const url=document.getElementById('setupUrl').value.trim();
+  const key=document.getElementById('setupKey').value.trim();
+  if(!url||!key){toast('URLとKeyの両方を入力してください');return;}
+  localStorage.setItem(CONFIG_KEY,JSON.stringify({url,key}));
+  document.getElementById('setupScreen').style.display='none';
+  connect(url,key);
 }
 
-function genId() {
-  const y = new Date().getFullYear().toString().slice(-2);
-  const m = String(new Date().getMonth()+1).padStart(2,'0');
-  const seq = String(cases.length + 1).padStart(3,'0');
-  return `G${y}${m}-${seq}`;
+async function connect(url,key){
+  try{
+    loading(true);
+    sb=supabase.createClient(url,key);
+    document.getElementById('mainContent').style.display='block';
+    document.getElementById('setupScreen').style.display='none';
+    await fetchAll();
+    subscribe();
+    syncOk(true);
+    loading(false);
+  }catch(e){
+    console.error(e); syncOk(false); loading(false);
+    toast('接続エラー: 設定を確認してください');
+    localStorage.removeItem(CONFIG_KEY);
+    document.getElementById('mainContent').style.display='none';
+    document.getElementById('setupScreen').style.display='block';
+  }
 }
 
-function today() { return new Date().toISOString().slice(0,10); }
-
-// ============================================================
-// Sample data
-// ============================================================
-function generateSampleData() {
-  return [
-    { id:'G2603-001', stage:'受注', priority:'高', customer:'中津川商工会議所', contact:'0573-65-XXXX', title:'創立50周年記念品', product:'栗きんとん 10個入', quantity:100, unitPrice:3240, amount:324000, deadline:'2026-04-15', assignee:'田中', wrapping:'外のし 紅白蝶結', shipping:'配達', notes:'4/10までに納品希望', created:today(), updated:today() },
-    { id:'G2603-002', stage:'見積', priority:'中', customer:'恵那山荘', contact:'0573-XX-XXXX', title:'夏季贈答用詰合せ', product:'栗きんとん・栗柿セット', quantity:50, unitPrice:5400, amount:270000, deadline:'2026-06-01', assignee:'鈴木', wrapping:'内のし 短冊', shipping:'宅配便', notes:'見積書を3/25までに送付', created:today(), updated:today() },
-    { id:'G2603-003', stage:'問合せ', priority:'低', customer:'ホテル花更紗', contact:'', title:'宴会用菓子', product:'', quantity:0, unitPrice:0, amount:0, deadline:'', assignee:'田中', wrapping:'', shipping:'', notes:'4月宴会用、詳細未定', created:today(), updated:today() },
-    { id:'G2603-004', stage:'製造', priority:'高', customer:'JA中津川', contact:'0573-XX-XXXX', title:'総代会手土産', product:'栗きんとん 6個入', quantity:200, unitPrice:1944, amount:388800, deadline:'2026-03-28', assignee:'鈴木', wrapping:'内のし 粗品', shipping:'配達', notes:'3/27午前中に納品必須', created:today(), updated:today() },
-    { id:'G2603-005', stage:'完了', priority:'中', customer:'坂本屋旅館', contact:'', title:'3月団体客用菓子', product:'栗きんとん 3個入', quantity:30, unitPrice:972, amount:29160, deadline:'2026-03-10', assignee:'田中', wrapping:'なし', shipping:'店頭渡し', notes:'', created:'2026-02-20', updated:'2026-03-10' },
-  ];
+/* ============================================================
+   CRUD
+   ============================================================ */
+async function fetchAll(){
+  loading(true);
+  const{data,error}=await sb.from(TABLE).select('*').order('updated_at',{ascending:false});
+  loading(false);
+  if(error){console.error(error);syncOk(false);toast('データ取得エラー: '+error.message);return;}
+  cases=(data||[]).map(fromDB);
+  syncOk(true); renderAll();
 }
 
-// ============================================================
-// Rendering
-// ============================================================
-function renderStats() {
-  const active = cases.filter(c => !['完了','失注'].includes(c.stage));
-  const totalAmount = active.reduce((s,c) => s + (c.amount||0), 0);
-  const urgent = active.filter(c => {
-    if (!c.deadline) return false;
-    const diff = (new Date(c.deadline) - new Date()) / 86400000;
-    return diff <= 7 && diff >= 0;
-  });
-  const html = `
-    <div class="stat-card"><div class="stat-label">全案件数</div><div class="stat-value">${cases.length}</div></div>
+async function upsertOne(c){
+  loading(true);
+  const{error}=await sb.from(TABLE).upsert(toDB(c),{onConflict:'id'});
+  loading(false);
+  if(error){toast('保存エラー: '+error.message);return false;}
+  return true;
+}
+
+async function deleteOne(id){
+  loading(true);
+  const{error}=await sb.from(TABLE).delete().eq('id',id);
+  loading(false);
+  if(error){toast('削除エラー');return false;}
+  return true;
+}
+
+async function deleteMany(ids){
+  loading(true);
+  const{error}=await sb.from(TABLE).delete().in('id',ids);
+  loading(false);
+  if(error){toast('削除エラー');return false;}
+  return true;
+}
+
+/* ============================================================
+   Realtime
+   ============================================================ */
+function subscribe(){
+  sb.channel('gaisho-rt')
+    .on('postgres_changes',{event:'*',schema:'public',table:TABLE},p=>{
+      if(p.eventType==='INSERT'){
+        const c=fromDB(p.new);
+        if(!cases.find(x=>x.id===c.id)) cases.unshift(c);
+      }else if(p.eventType==='UPDATE'){
+        const c=fromDB(p.new);
+        const i=cases.findIndex(x=>x.id===c.id);
+        if(i>=0)cases[i]=c; else cases.unshift(c);
+      }else if(p.eventType==='DELETE'){
+        cases=cases.filter(x=>x.id!==p.old.id);
+        selectedIds.delete(p.old.id);
+      }
+      renderAll();
+    })
+    .subscribe(s=>syncOk(s==='SUBSCRIBED'));
+}
+
+/* ============================================================
+   Data mapping
+   ============================================================ */
+function fromDB(r){return{id:r.id,stage:r.stage||'問合せ',priority:r.priority||'中',customer:r.customer||'',contact:r.contact||'',title:r.title||'',product:r.product||'',quantity:r.quantity||0,unitPrice:r.unit_price||0,amount:r.amount||0,deadline:r.deadline||'',assignee:r.assignee||'',wrapping:r.wrapping||'',shipping:r.shipping||'',notes:r.notes||'',created:r.created_at?(r.created_at+'').slice(0,10):'',updated:r.updated_at?(r.updated_at+'').slice(0,10):''}}
+
+function toDB(c){return{id:c.id,stage:c.stage,priority:c.priority,customer:c.customer,contact:c.contact||'',title:c.title,product:c.product||'',quantity:c.quantity||0,unit_price:c.unitPrice||0,amount:c.amount||0,deadline:c.deadline||null,assignee:c.assignee||'',wrapping:c.wrapping||'',shipping:c.shipping||'',notes:c.notes||''}}
+
+function genId(){const d=new Date();return`G${String(d.getFullYear()).slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}-${String(cases.length+1).padStart(3,'0')}`}
+function todayStr(){return new Date().toISOString().slice(0,10)}
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+function renderAll(){renderStats();renderFilters();renderTable();}
+
+function renderStats(){
+  const active=cases.filter(c=>!['完了','失注'].includes(c.stage));
+  const amt=active.reduce((s,c)=>s+(c.amount||0),0);
+  const now=new Date();
+  const urgent=active.filter(c=>{if(!c.deadline)return false;const d=(new Date(c.deadline)-now)/864e5;return d>=0&&d<=7;});
+  const over=active.filter(c=>c.deadline&&new Date(c.deadline)<now);
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat-card"><div class="stat-label">全案件</div><div class="stat-value">${cases.length}</div></div>
     <div class="stat-card"><div class="stat-label">進行中</div><div class="stat-value">${active.length}</div></div>
-    <div class="stat-card"><div class="stat-label">進行中 合計金額</div><div class="stat-value">&yen;${totalAmount.toLocaleString()}</div></div>
-    <div class="stat-card"><div class="stat-label">7日以内納期</div><div class="stat-value ${urgent.length?'deadline-warn':''}">${urgent.length}</div></div>
-  `;
-  document.getElementById('statsBar').innerHTML = html;
+    <div class="stat-card"><div class="stat-label">進行中 合計金額</div><div class="stat-value">&yen;${amt.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">7日以内納期</div><div class="stat-value ${urgent.length?'warn':''}">${urgent.length}</div></div>
+    <div class="stat-card"><div class="stat-label">納期超過</div><div class="stat-value ${over.length?'warn':''}">${over.length}</div></div>`;
 }
 
-function renderFilters() {
-  const container = document.getElementById('stageFilters');
-  container.innerHTML = STAGES.map(s => {
-    const count = s === '全て' ? cases.length : cases.filter(c => c.stage === s).length;
-    return `<button class="filter-chip ${activeStage===s?'active':''}" onclick="setStage('${s}')">${s} (${count})</button>`;
+function renderFilters(){
+  document.getElementById('stageFilters').innerHTML=STAGES.map(s=>{
+    const n=s==='全て'?cases.length:cases.filter(c=>c.stage===s).length;
+    return`<button class="filter-chip ${activeStage===s?'active':''}" onclick="setStage('${s}')">${s}(${n})</button>`;
   }).join('');
 }
 
-function getFiltered() {
-  let list = [...cases];
-  if (activeStage !== '全て') list = list.filter(c => c.stage === activeStage);
-  const q = document.getElementById('searchInput').value.trim().toLowerCase();
-  if (q) {
-    list = list.filter(c =>
-      (c.customer||'').toLowerCase().includes(q) ||
-      (c.title||'').toLowerCase().includes(q) ||
-      (c.product||'').toLowerCase().includes(q) ||
-      (c.id||'').toLowerCase().includes(q) ||
-      (c.assignee||'').toLowerCase().includes(q)
-    );
+function getFiltered(){
+  let l=[...cases];
+  if(activeStage!=='全て') l=l.filter(c=>c.stage===activeStage);
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  if(q) l=l.filter(c=>[c.customer,c.title,c.product,c.id,c.assignee].some(v=>(v||'').toLowerCase().includes(q)));
+  const s=document.getElementById('sortSelect').value;
+  l.sort((a,b)=>{switch(s){
+    case'updated_desc':return(b.updated||'').localeCompare(a.updated||'');
+    case'updated_asc':return(a.updated||'').localeCompare(b.updated||'');
+    case'deadline_asc':return(a.deadline||'9').localeCompare(b.deadline||'9');
+    case'deadline_desc':return(b.deadline||'').localeCompare(a.deadline||'');
+    case'amount_desc':return(b.amount||0)-(a.amount||0);
+    case'amount_asc':return(a.amount||0)-(b.amount||0);
+    case'customer_asc':return(a.customer||'').localeCompare(b.customer||'');
+    default:return 0;}});
+  return l;
+}
+
+function dlCls(d){if(!d)return'';const x=(new Date(d)-new Date())/864e5;return x<0?'dl-overdue':x<=7?'dl-near':'dl-ok';}
+function priCls(p){return p==='高'?'pri-high':p==='中'?'pri-mid':'pri-low';}
+function fmtD(d){if(!d)return'-';const p=d.split('-');return p.length===3?`${+p[1]}/${+p[2]}`:d;}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function renderTable(){
+  const l=getFiltered();
+  const tb=document.getElementById('tableBody');
+  const em=document.getElementById('emptyState');
+  if(!l.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=l.map(c=>`<tr ondblclick="openModal('${c.id}')">
+    <td style="text-align:center"><input type="checkbox" ${selectedIds.has(c.id)?'checked':''} onchange="toggleSelect('${c.id}',this.checked)" onclick="event.stopPropagation()"></td>
+    <td class="id-cell">${c.id}</td>
+    <td><span class="stage-badge ${STG_CLS[c.stage]||''}">${c.stage}</span></td>
+    <td><span class="${priCls(c.priority)}">${c.priority}</span></td>
+    <td style="font-weight:500">${esc(c.customer)}</td>
+    <td>${esc(c.title)}</td>
+    <td style="color:var(--text-secondary)">${esc(c.product||'-')}</td>
+    <td class="num">${c.quantity||'-'}</td>
+    <td class="num" style="font-weight:500">${c.amount?'&yen;'+c.amount.toLocaleString():'-'}</td>
+    <td class="${dlCls(c.deadline)}">${fmtD(c.deadline)}</td>
+    <td>${esc(c.assignee||'-')}</td>
+    <td style="color:var(--text-muted);font-size:11px">${fmtD(c.updated)}</td>
+    <td><div class="row-actions">
+      <button class="btn-icon" onclick="event.stopPropagation();openModal('${c.id}')" title="編集"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      <button class="btn-icon del" onclick="event.stopPropagation();cfmDel('${c.id}')" title="削除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+    </div></td></tr>`).join('');
+  document.getElementById('bulkDeleteBtn').style.display=selectedIds.size>0?'inline-flex':'none';
+}
+
+/* ============================================================
+   Selection / Filter
+   ============================================================ */
+function toggleSelect(id,ch){if(ch)selectedIds.add(id);else selectedIds.delete(id);renderTable();}
+function toggleAll(ch){selectedIds.clear();if(ch)getFiltered().forEach(c=>selectedIds.add(c.id));renderTable();}
+function setStage(s){activeStage=s;renderTable();renderFilters();}
+
+/* ============================================================
+   Modal
+   ============================================================ */
+function openModal(id){
+  editingId=id||null;
+  document.getElementById('modalTitle').textContent=id?'案件編集':'新規案件';
+  if(id){
+    const c=cases.find(x=>x.id===id);if(!c)return;
+    document.getElementById('fStage').value=c.stage;
+    document.getElementById('fPriority').value=c.priority;
+    document.getElementById('fCustomer').value=c.customer;
+    document.getElementById('fContact').value=c.contact||'';
+    document.getElementById('fTitle').value=c.title;
+    document.getElementById('fProduct').value=c.product||'';
+    document.getElementById('fQuantity').value=c.quantity||'';
+    document.getElementById('fUnitPrice').value=c.unitPrice||'';
+    document.getElementById('fAmount').value=c.amount||'';
+    document.getElementById('fDeadline').value=c.deadline||'';
+    document.getElementById('fAssignee').value=c.assignee||'';
+    document.getElementById('fWrapping').value=c.wrapping||'';
+    document.getElementById('fShipping').value=c.shipping||'';
+    document.getElementById('fNotes').value=c.notes||'';
+  }else{
+    document.querySelectorAll('#modalOverlay input,#modalOverlay textarea').forEach(el=>el.value='');
+    document.getElementById('fStage').value='問合せ';
+    document.getElementById('fPriority').value='中';
+    document.getElementById('fShipping').value='';
   }
-  const sort = document.getElementById('sortSelect').value;
-  list.sort((a,b) => {
-    switch(sort) {
-      case 'updated_desc': return (b.updated||'').localeCompare(a.updated||'');
-      case 'updated_asc':  return (a.updated||'').localeCompare(b.updated||'');
-      case 'deadline_asc': return (a.deadline||'9').localeCompare(b.deadline||'9');
-      case 'deadline_desc':return (b.deadline||'').localeCompare(a.deadline||'');
-      case 'amount_desc':  return (b.amount||0) - (a.amount||0);
-      case 'amount_asc':   return (a.amount||0) - (b.amount||0);
-      case 'customer_asc': return (a.customer||'').localeCompare(b.customer||'');
-      default: return 0;
-    }
-  });
-  return list;
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('fCustomer').focus(),200);
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');editingId=null;}
+
+document.getElementById('fQuantity').addEventListener('input',autoCalc);
+document.getElementById('fUnitPrice').addEventListener('input',autoCalc);
+function autoCalc(){
+  const q=parseInt(document.getElementById('fQuantity').value)||0;
+  const u=parseInt(document.getElementById('fUnitPrice').value)||0;
+  if(q&&u)document.getElementById('fAmount').value=q*u;
 }
 
-function deadlineClass(d) {
-  if (!d) return '';
-  const diff = (new Date(d) - new Date()) / 86400000;
-  if (diff < 0) return 'deadline-warn';
-  if (diff <= 7) return 'deadline-near';
-  return 'deadline-ok';
-}
-
-function priorityClass(p) {
-  if (p === '高') return 'priority-high';
-  if (p === '中') return 'priority-mid';
-  return 'priority-low';
-}
-
-function formatDate(d) {
-  if (!d) return '-';
-  const parts = d.split('-');
-  if (parts.length === 3) return `${parts[1]}/${parts[2]}`;
-  return d;
-}
-
-function renderTable() {
-  const list = getFiltered();
-  const tbody = document.getElementById('tableBody');
-  const empty = document.getElementById('emptyState');
-
-  if (!list.length) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-
-  tbody.innerHTML = list.map(c => `
-    <tr>
-      <td class="col-check"><input type="checkbox" ${selectedIds.has(c.id)?'checked':''} onchange="toggleSelect('${c.id}', this.checked)"></td>
-      <td style="font-weight:500; color:var(--accent);">${c.id}</td>
-      <td><span class="stage-badge ${STAGE_CLASS[c.stage]||''}">${c.stage}</span></td>
-      <td><span class="${priorityClass(c.priority)}">${c.priority}</span></td>
-      <td style="font-weight:500;">${esc(c.customer)}</td>
-      <td>${esc(c.title)}</td>
-      <td>${esc(c.product||'-')}</td>
-      <td class="num">${c.quantity||'-'}</td>
-      <td class="num">${c.amount ? '&yen;'+c.amount.toLocaleString() : '-'}</td>
-      <td class="${deadlineClass(c.deadline)}">${formatDate(c.deadline)}</td>
-      <td>${esc(c.assignee||'-')}</td>
-      <td style="color:var(--text-muted); font-size:12px;">${formatDate(c.updated)}</td>
-      <td>
-        <div class="row-actions">
-          <button class="btn btn-icon btn-sm" onclick="openModal('${c.id}')" title="編集">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <button class="btn btn-icon btn-sm btn-danger" onclick="confirmDelete('${c.id}')" title="削除">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-          </button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-
-  // Bulk delete button
-  document.getElementById('bulkDeleteBtn').style.display = selectedIds.size > 0 ? 'inline-flex' : 'none';
-  renderStats();
-  renderFilters();
-}
-
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-// ============================================================
-// Selection
-// ============================================================
-function toggleSelect(id, checked) {
-  if (checked) selectedIds.add(id); else selectedIds.delete(id);
-  renderTable();
-}
-function toggleAll(checked) {
-  const list = getFiltered();
-  selectedIds.clear();
-  if (checked) list.forEach(c => selectedIds.add(c.id));
-  renderTable();
-}
-
-// ============================================================
-// Filters
-// ============================================================
-function setStage(s) {
-  activeStage = s;
-  renderTable();
-}
-
-// ============================================================
-// Modal
-// ============================================================
-function openModal(id) {
-  editingId = id || null;
-  const overlay = document.getElementById('modalOverlay');
-  document.getElementById('modalTitle').textContent = id ? '案件編集' : '新規案件';
-
-  if (id) {
-    const c = cases.find(x => x.id === id);
-    if (!c) return;
-    document.getElementById('fStage').value = c.stage;
-    document.getElementById('fPriority').value = c.priority;
-    document.getElementById('fCustomer').value = c.customer;
-    document.getElementById('fContact').value = c.contact||'';
-    document.getElementById('fTitle').value = c.title;
-    document.getElementById('fProduct').value = c.product||'';
-    document.getElementById('fQuantity').value = c.quantity||'';
-    document.getElementById('fUnitPrice').value = c.unitPrice||'';
-    document.getElementById('fAmount').value = c.amount||'';
-    document.getElementById('fDeadline').value = c.deadline||'';
-    document.getElementById('fAssignee').value = c.assignee||'';
-    document.getElementById('fWrapping').value = c.wrapping||'';
-    document.getElementById('fShipping').value = c.shipping||'';
-    document.getElementById('fNotes').value = c.notes||'';
-  } else {
-    document.querySelectorAll('.modal input, .modal textarea').forEach(el => el.value = '');
-    document.getElementById('fStage').value = '問合せ';
-    document.getElementById('fPriority').value = '中';
-    document.getElementById('fShipping').value = '';
-  }
-
-  overlay.classList.add('open');
-  setTimeout(() => document.getElementById('fCustomer').focus(), 200);
-}
-
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-  editingId = null;
-}
-
-// Auto-calc amount
-document.getElementById('fQuantity').addEventListener('input', autoCalc);
-document.getElementById('fUnitPrice').addEventListener('input', autoCalc);
-function autoCalc() {
-  const q = parseInt(document.getElementById('fQuantity').value) || 0;
-  const u = parseInt(document.getElementById('fUnitPrice').value) || 0;
-  if (q && u) document.getElementById('fAmount').value = q * u;
-}
-
-function saveCase() {
-  const customer = document.getElementById('fCustomer').value.trim();
-  const title = document.getElementById('fTitle').value.trim();
-  if (!customer || !title) {
-    toast('顧客名と案件名は必須です');
-    return;
-  }
-
-  const data = {
-    stage: document.getElementById('fStage').value,
-    priority: document.getElementById('fPriority').value,
-    customer,
-    contact: document.getElementById('fContact').value.trim(),
-    title,
-    product: document.getElementById('fProduct').value.trim(),
-    quantity: parseInt(document.getElementById('fQuantity').value) || 0,
-    unitPrice: parseInt(document.getElementById('fUnitPrice').value) || 0,
-    amount: parseInt(document.getElementById('fAmount').value) || 0,
-    deadline: document.getElementById('fDeadline').value,
-    assignee: document.getElementById('fAssignee').value.trim(),
-    wrapping: document.getElementById('fWrapping').value.trim(),
-    shipping: document.getElementById('fShipping').value,
-    notes: document.getElementById('fNotes').value.trim(),
-    updated: today(),
+async function saveCase(){
+  const customer=document.getElementById('fCustomer').value.trim();
+  const title=document.getElementById('fTitle').value.trim();
+  if(!customer||!title){toast('顧客名と案件名は必須です');return;}
+  document.getElementById('saveBtn').disabled=true;
+  const data={
+    id:editingId||genId(),
+    stage:document.getElementById('fStage').value,
+    priority:document.getElementById('fPriority').value,
+    customer,contact:document.getElementById('fContact').value.trim(),
+    title,product:document.getElementById('fProduct').value.trim(),
+    quantity:parseInt(document.getElementById('fQuantity').value)||0,
+    unitPrice:parseInt(document.getElementById('fUnitPrice').value)||0,
+    amount:parseInt(document.getElementById('fAmount').value)||0,
+    deadline:document.getElementById('fDeadline').value,
+    assignee:document.getElementById('fAssignee').value.trim(),
+    wrapping:document.getElementById('fWrapping').value.trim(),
+    shipping:document.getElementById('fShipping').value,
+    notes:document.getElementById('fNotes').value.trim(),
   };
-
-  if (editingId) {
-    const idx = cases.findIndex(c => c.id === editingId);
-    if (idx >= 0) { cases[idx] = { ...cases[idx], ...data }; }
-    toast('案件を更新しました');
-  } else {
-    data.id = genId();
-    data.created = today();
-    cases.unshift(data);
-    toast('新規案件を登録しました');
-  }
-
-  save();
-  closeModal();
-  renderTable();
+  const ok=await upsertOne(data);
+  document.getElementById('saveBtn').disabled=false;
+  if(ok){toast(editingId?'更新しました':'登録しました');closeModal();await fetchAll();}
 }
 
-// ============================================================
-// Delete
-// ============================================================
-function confirmDelete(id) {
-  const c = cases.find(x => x.id === id);
-  showConfirm(`${c.customer} - ${c.title} を削除しますか?`, () => {
-    cases = cases.filter(x => x.id !== id);
-    selectedIds.delete(id);
-    save();
-    renderTable();
-    toast('案件を削除しました');
+/* ============================================================
+   Delete
+   ============================================================ */
+function cfmDel(id){
+  const c=cases.find(x=>x.id===id);
+  showConfirm(`「${c.customer} - ${c.title}」を削除しますか?`,async()=>{
+    if(await deleteOne(id)){selectedIds.delete(id);await fetchAll();toast('削除しました');}
   });
 }
-
-function bulkDelete() {
-  if (!selectedIds.size) return;
-  showConfirm(`${selectedIds.size}件の案件を一括削除しますか?`, () => {
-    cases = cases.filter(c => !selectedIds.has(c.id));
-    selectedIds.clear();
-    save();
-    renderTable();
-    toast('一括削除しました');
+function bulkDelete(){
+  if(!selectedIds.size)return;
+  showConfirm(`${selectedIds.size}件を一括削除しますか?`,async()=>{
+    if(await deleteMany([...selectedIds])){selectedIds.clear();await fetchAll();toast('一括削除しました');}
   });
 }
-
-function showConfirm(msg, onOk) {
-  const container = document.getElementById('confirmContainer');
-  container.innerHTML = `
-    <div class="confirm-overlay" onclick="if(event.target===this)this.remove()">
-      <div class="confirm-box">
-        <p>${msg}</p>
-        <div class="confirm-actions">
-          <button class="btn" onclick="this.closest('.confirm-overlay').remove()">キャンセル</button>
-          <button class="btn btn-danger" id="confirmOk">削除する</button>
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById('confirmOk').addEventListener('click', () => {
-    container.innerHTML = '';
-    onOk();
-  });
+function showConfirm(msg,onOk){
+  const c=document.getElementById('confirmContainer');
+  c.innerHTML=`<div class="confirm-overlay" onclick="if(event.target===this)this.remove()"><div class="confirm-box"><p>${msg}</p><div class="confirm-actions"><button class="btn btn-surface" onclick="this.closest('.confirm-overlay').remove()">キャンセル</button><button class="btn btn-danger" id="cfmOk">削除する</button></div></div></div>`;
+  document.getElementById('cfmOk').addEventListener('click',()=>{c.innerHTML='';onOk();});
 }
 
-// ============================================================
-// CSV export / import
-// ============================================================
-function exportCSV() {
-  const headers = ['案件番号','ステージ','優先度','顧客名','顧客連絡先','案件名','商品名','数量','単価','金額','納期','担当者','のし包装','配送方法','備考','登録日','更新日'];
-  const rows = cases.map(c => [
-    c.id, c.stage, c.priority, c.customer, c.contact, c.title, c.product,
-    c.quantity, c.unitPrice, c.amount, c.deadline, c.assignee,
-    c.wrapping, c.shipping, c.notes, c.created, c.updated
-  ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
-
-  const bom = '\uFEFF';
-  const csv = bom + [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `外商案件_${today()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+/* ============================================================
+   CSV
+   ============================================================ */
+function exportCSV(){
+  const h=['案件番号','ステージ','優先度','顧客名','連絡先','案件名','商品名','数量','単価','金額','納期','担当者','のし包装','配送方法','備考','登録日','更新日'];
+  const rows=cases.map(c=>[c.id,c.stage,c.priority,c.customer,c.contact,c.title,c.product,c.quantity,c.unitPrice,c.amount,c.deadline,c.assignee,c.wrapping,c.shipping,c.notes,c.created,c.updated].map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  const blob=new Blob(['\uFEFF'+[h.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`外商案件_${todayStr()}.csv`;a.click();
   toast('CSVを出力しました');
 }
 
-function importCSV(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const text = e.target.result;
-      const lines = text.split('\n').filter(l => l.trim());
-      if (lines.length < 2) { toast('データがありません'); return; }
-
-      const headerLine = lines[0];
-      let imported = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const vals = parseCSVLine(lines[i]);
-        if (vals.length < 10) continue;
-        const c = {
-          id: vals[0] || genId(),
-          stage: vals[1] || '問合せ',
-          priority: vals[2] || '中',
-          customer: vals[3] || '',
-          contact: vals[4] || '',
-          title: vals[5] || '',
-          product: vals[6] || '',
-          quantity: parseInt(vals[7]) || 0,
-          unitPrice: parseInt(vals[8]) || 0,
-          amount: parseInt(vals[9]) || 0,
-          deadline: vals[10] || '',
-          assignee: vals[11] || '',
-          wrapping: vals[12] || '',
-          shipping: vals[13] || '',
-          notes: vals[14] || '',
-          created: vals[15] || today(),
-          updated: vals[16] || today(),
-        };
-        if (c.customer || c.title) { cases.push(c); imported++; }
+async function importCSV(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      const lines=e.target.result.split('\n').filter(l=>l.trim());
+      if(lines.length<2){toast('データがありません');return;}
+      let n=0;
+      for(let i=1;i<lines.length;i++){
+        const v=csvParse(lines[i]);if(v.length<6)continue;
+        const c={id:v[0]||genId(),stage:v[1]||'問合せ',priority:v[2]||'中',customer:v[3]||'',contact:v[4]||'',title:v[5]||'',product:v[6]||'',quantity:parseInt(v[7])||0,unitPrice:parseInt(v[8])||0,amount:parseInt(v[9])||0,deadline:v[10]||'',assignee:v[11]||'',wrapping:v[12]||'',shipping:v[13]||'',notes:v[14]||''};
+        if(c.customer||c.title){await upsertOne(c);n++;}
       }
-      save();
-      renderTable();
-      toast(`${imported}件の案件を取り込みました`);
-    } catch(err) {
-      toast('CSV読み込みエラー: ' + err.message);
-    }
+      await fetchAll();toast(`${n}件取り込みました`);
+    }catch(err){toast('CSV読み込みエラー: '+err.message);}
   };
-  reader.readAsText(file, 'UTF-8');
-  event.target.value = '';
+  reader.readAsText(file,'UTF-8');ev.target.value='';
 }
 
-function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (inQuotes) {
-      if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
-      else if (ch === '"') { inQuotes = false; }
-      else { current += ch; }
-    } else {
-      if (ch === '"') { inQuotes = true; }
-      else if (ch === ',') { result.push(current.trim()); current = ''; }
-      else { current += ch; }
-    }
-  }
-  result.push(current.trim());
-  return result;
+function csvParse(line){
+  const r=[];let c='',q=false;
+  for(let i=0;i<line.length;i++){const ch=line[i];if(q){if(ch==='"'&&line[i+1]==='"'){c+='"';i++;}else if(ch==='"'){q=false;}else{c+=ch;}}else{if(ch==='"'){q=true;}else if(ch===','){r.push(c.trim());c='';}else{c+=ch;}}}
+  r.push(c.trim());return r;
 }
 
-// ============================================================
-// Toast
-// ============================================================
-function toast(msg) {
-  const container = document.getElementById('toastContainer');
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = msg;
-  container.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
+/* ============================================================
+   Helpers
+   ============================================================ */
+function loading(s){document.getElementById('loadingBar').classList.toggle('show',s);}
+function syncOk(ok){const d=document.getElementById('syncDot');d.classList.toggle('offline',!ok);d.title=ok?'Supabase 接続中':'切断';}
+function toast(m){const c=document.getElementById('toastContainer'),e=document.createElement('div');e.className='toast';e.textContent=m;c.appendChild(e);setTimeout(()=>e.remove(),3000);}
 
-// ============================================================
-// Keyboard shortcuts
-// ============================================================
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeModal();
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    document.getElementById('searchInput').focus();
-  }
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape')closeModal();
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();document.getElementById('searchInput').focus();}
 });
-
-// ============================================================
-// Init
-// ============================================================
-load();
-renderTable();
 </script>
 </body>
 </html>
