@@ -279,8 +279,8 @@ tbody tr:hover .row-actions{opacity:1}
    Config
    ============================================================ */
 // -- 直接書き込む場合はここに記入 --
-const HARDCODED_URL = '';
-const HARDCODED_KEY = '';
+const HARDCODED_URL = 'https://olpiblcbcwxmudbmklpi.supabase.co';
+const HARDCODED_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9scGlibGNiY3d4bXVkYm1rbHBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQ2MjYsImV4cCI6MjA4OTgyMDYyNn0.WqLijqYep4-bt8HdRnt3lq61uJwWLt-t8DSvNVbqrRI';
 // ----------------------------------
 
 const CONFIG_KEY = 'ryoheidou_gaisho_config';
@@ -329,10 +329,15 @@ async function connect(url,key){
     loading(false);
   }catch(e){
     console.error(e); syncOk(false); loading(false);
-    toast('接続エラー: 設定を確認してください');
-    localStorage.removeItem(CONFIG_KEY);
-    document.getElementById('mainContent').style.display='none';
-    document.getElementById('setupScreen').style.display='block';
+    if(HARDCODED_URL&&HARDCODED_KEY){
+      toast('接続エラー: 通信状況を確認して再読み込みしてください');
+      document.getElementById('mainContent').style.display='block';
+    }else{
+      toast('接続エラー: 設定を確認してください');
+      localStorage.removeItem(CONFIG_KEY);
+      document.getElementById('mainContent').style.display='none';
+      document.getElementById('setupScreen').style.display='block';
+    }
   }
 }
 
